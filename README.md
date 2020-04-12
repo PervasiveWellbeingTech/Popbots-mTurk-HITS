@@ -1,5 +1,5 @@
 # Popbots-mTurk-HITS
-A code repository for the HIT codes we use on mTurk to collect and QA stressful sentences.
+A code repository for the HIT code (i.e., HTML, CSS, JavaScript) we use on mTurk to collect and QA stressful sentences.
 
 Explanation of HITs:
 https://www.loom.com/share/226d565b3dc846fcbce164905991229b

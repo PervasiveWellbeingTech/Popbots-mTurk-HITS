@@ -45,7 +45,7 @@
                     <br />
                     <br />
                     <div align="center">
-                        <input type="checkbox" name="Label" id="Label" value="Work" title="Test" onClick="return KeepCount()"> Work  
+                        <input type="checkbox" name="Label" id="Label" value="Work" onClick="return KeepCount()"> Work  
                             <a href="#" data-toggle="tooltip" title="Stress resulting from your job or commute to/from your place of employment">
                                 <img src="http://web.stanford.edu/~mattm401/img/question.png" width="13px" height="13px"/>
                                 </a><br />

@@ -4,8 +4,8 @@ A code repository for the HIT code (i.e., HTML, CSS, JavaScript, jQuery) we use 
 # HITS
 
 Explanation of HITs:
-https://www.loom.com/share/226d565b3dc846fcbce164905991229b
-Copy this code into the mTurk interface and copy back/push any changes.
+https://www.loom.com/share/226d565b3dc846fcbce164905991229b  
+Copy Collection and/or QA code into the mTurk interface and copy back/push any changes.
 
 # Data Processing 
 Coming soon...

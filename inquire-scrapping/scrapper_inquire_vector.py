@@ -10,9 +10,10 @@ from os import listdir
 
 from sentence_transformers import SentenceTransformer
 model = SentenceTransformer('bert-base-nli-mean-tokens')
+np.set_printoptions(threshold=np.inf,suppress=True)
 
 BASE_URL = 'http://commuter.stanford.edu:9001'
-BASE_PATH = '/home/thierry/Desktop/stanford_pwbt/datasets/'
+BASE_PATH = '/commuter/PopBots/NLP/Popbots-mTurk-HITS/bert-pipeline/datasets/'
 DATASET_NAME = '2020-04-29-MainTurkAggregation-5-Turkers_v0_Sorted'
 
 
@@ -58,12 +59,12 @@ def read_process_dataset():
             category_df['embedding'] = category_df['embedding'].apply(lambda x: np.array(x))
             average_mean = np.mean(np.array(category_df['embedding'].values),axis=0) # vector of 768 dim
             
-            bootstrapped_df.append({'category':category,'mean_embedding':average_mean,'nb_sentences':nb_sentences,'sources_sentences':list(category_df[DATA_COLUMN].values)})
+            bootstrapped_df=bootstrapped_df.append({'category':category,'mean_embedding':average_mean,'nb_sentences':nb_sentences,'sources_sentences':list(category_df[DATA_COLUMN].values)},ignore_index=True)
             all_mean.append(average_mean)
         
         
         mean_all_mean = np.mean(np.array(all_mean),axis=0)
-        bootstrapped_df.append({'category':"All "+category,'mean_embedding':mean_all_mean,'nb_sentences':'','sources_sentences':''})
+        bootstrapped_df=bootstrapped_df.append({'category':"All "+category,'mean_embedding':mean_all_mean,'nb_sentences':'','sources_sentences':''},ignore_index=True)
 
     return bootstrapped_df
 
@@ -83,7 +84,7 @@ def aggregate_json_convert_tocsv():
                     with open(OUTPUT_PATH+fname,"rb") as infile:
                         result += json.load(infile)
                 except Exception as error:
-                    print(f"Error while trying to load {fname}") 
+                    print(f"Error while trying to load {fname} with error: {error}") 
             json.dump(result,outfile)
         df = pd.read_json(f'./final_data/json/{category}.json',orient='records')
         df.drop_duplicates(subset='text', keep='first', inplace=True)
@@ -138,7 +139,7 @@ async def get_stressors(session,dataset,stressor_index,category, stressor_senten
     stressor_data = "NA"
     output_data = []
     endpoint = '/query'
-    params = {'data':stressor_data,'dataset': dataset,'maxWords':15,'minWords':4,'top':10,'percent':'0.01','model':'bert','query_vector':list(embedding)}
+    params = {'data':stressor_data,'dataset': dataset,'maxWords':15,'minWords':4,'top':10,'percent':'0.01','model':'bert','query_vector':str(list(embedding))}
     url = f'{BASE_URL}{endpoint}'
     #print(f'Getting {category} stressor for sentence {stressor_sentence}')
     
@@ -148,7 +149,7 @@ async def get_stressors(session,dataset,stressor_index,category, stressor_senten
         #await asyncio.sleep(2)
         data = await resp.json()
         for elem in data['query_results']:
-            json_line  = {"dataset":str(dataset),"category":str(category),"text":str(elem['sent_text']),"similarity":str(elem['similarity']),"stressor":str(stressor_data),"source_embedding":list(embedding),"nb_sentences":nb_sentences}
+            json_line  = {"dataset":str(dataset),"category":str(category),"text":str(elem['sent_text']),"similarity":str(elem['similarity']),"stressor":str(stressor_data)}#,"source_embedding":str(list(embedding)),"nb_sentences":str(nb_sentences)}
             output_data.append(json_line)
 
     async with aiofiles.open(f'./inquire_scraped_data/{category.replace(" ", "_")}_{stressor_index}_{dataset}.json', 'a+') as file:
@@ -176,6 +177,8 @@ async def main(df):
 
 
 if __name__ == "__main__":    
-    #df = read_process_dataset()
+    df = read_process_dataset()
     #asyncio.run(main(df))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(df))
     aggregate_json_convert_tocsv() # aggregate all the CSVs at the end

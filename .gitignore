@@ -3,3 +3,4 @@
 /mturk-automation/*.png
 /mturk-automation/*.xlsx
 /mturk-automation/.ipynb_checkpoints/*.ipynb
+bert-pipeline/tfmode/

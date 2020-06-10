@@ -61,13 +61,14 @@ def read_process_dataset():
             #category_df['embedding'] = category_df['embedding'].apply(lambda x: np.array(x))
             #average_mean = np.mean(np.array(category_df['embedding'].values),axis=0) # vector of 768 dim
             
-            bootstrapped_df=bootstrapped_df.append({'category':category,'nb_sentences':nb_sentences,'sources_sentences':" ".join(list(category_df[DATA_COLUMN].values))},ignore_index=True)
+            bootstrapped_df=bootstrapped_df.append({'category':category,'nb_sentences':str(nb_sentences),'source_sentences':" ".join(list(category_df[DATA_COLUMN].values))},ignore_index=True)
             #all_mean.append(average_mean)
         
         
         #mean_all_mean = np.mean(np.array(all_mean),axis=0)
         category_df_unsampled = df[df[LABEL_COLUMN_RAW] == category]
-        bootstrapped_df=bootstrapped_df.append({'category':"All "+category,'nb_sentences':len(category_df_unsampled),'sources_sentences':" ".join(list(category_df_unsampled[DATA_COLUMN].values))},ignore_index=True)
+        #print(" ".join(list(category_df_unsampled[DATA_COLUMN].values)))
+        bootstrapped_df=bootstrapped_df.append({'category':"All "+category,'nb_sentences':str(len(category_df_unsampled)),'source_sentences':" ".join(list(category_df_unsampled[DATA_COLUMN].values))},ignore_index=True)
 
     return bootstrapped_df
 
@@ -79,7 +80,7 @@ def aggregate_json_convert_tocsv():
         for path in listdir(OUTPUT_PATH):
             if category.replace(" ","_") in path:
                 filenames_cat_list.append(path)
-        with open(f'./final_data/json/{category}.json', 'w+') as outfile:
+        with open(f'./final_data/json/w2v_{category}.json', 'w+') as outfile:
             result = []
             for fname in filenames_cat_list:
                 print(fname)
@@ -140,9 +141,10 @@ class RateLimiter:
 
 async def get_stressors(session,dataset,stressor_index,category, stressor_sentence,embedding,nb_sentences):
     stressor_data = stressor_sentence
+    print(stressor_data)
     output_data = []
     endpoint = '/query'
-    params = {'data':stressor_data,'dataset': dataset,'maxWords':15,'minWords':4,'top':10,'percent':'0.01'}#,'model':'bert','query_vector':str(list(embedding))}
+    params = {'data':stressor_data,'dataset': dataset,'maxWords':15,'minWords':4,'top':10,'percent':'0.01','model':'default'}#,'query_vector':str(list(embedding))}
     url = f'{BASE_URL}{endpoint}'
     #print(f'Getting {category} stressor for sentence {stressor_sentence}')
     
@@ -151,6 +153,7 @@ async def get_stressors(session,dataset,stressor_index,category, stressor_senten
         #print(resp)
         #await asyncio.sleep(2)
         data = await resp.json()
+        print(data)
         for elem in data['query_results']:
             json_line  = {"dataset":str(dataset),"category":str(category),"text":str(elem['sent_text']),"similarity":str(elem['similarity']),"stressor":str(stressor_data)}#,"source_embedding":str(list(embedding)),"nb_sentences":str(nb_sentences)}
             output_data.append(json_line)

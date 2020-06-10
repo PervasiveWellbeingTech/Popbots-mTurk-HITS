@@ -47,24 +47,28 @@ def read_process_dataset():
 
     boostrap_number = 5
 
-    for category in SCRAPED_CATEGORIES:
+    
 
-        nb_sentences = 38
-        all_mean = []
-        for i in range(boostrap_number):
-            category_df = df[df[LABEL_COLUMN_RAW] == category].sample(n=nb_sentences)
-            #category_df_unsampled = df[df[LABEL_COLUMN_RAW] == category]
-            
-            category_df['embedding'] = model.encode(category_df[DATA_COLUMN].values)
-            category_df['embedding'] = category_df['embedding'].apply(lambda x: np.array(x))
-            average_mean = np.mean(np.array(category_df['embedding'].values),axis=0) # vector of 768 dim
-            
-            bootstrapped_df=bootstrapped_df.append({'category':category,'mean_embedding':average_mean,'nb_sentences':nb_sentences,'sources_sentences':list(category_df[DATA_COLUMN].values)},ignore_index=True)
-            all_mean.append(average_mean)
+    nb_sentences = 75
+    all_mean = []
+    for i in range(boostrap_number):
+
         
+        category_df= pd.DataFrame(df.groupby('class').apply(lambda x: x.sample(nb_sentences).reset_index(drop=True)))
+        #category_df_unsampled = df[df[LABEL_COLUMN_RAW] == category]
         
-        mean_all_mean = np.mean(np.array(all_mean),axis=0)
-        bootstrapped_df=bootstrapped_df.append({'category':"All "+category,'mean_embedding':mean_all_mean,'nb_sentences':'','sources_sentences':''},ignore_index=True)
+        category_df['embedding'] = model.encode(category_df[DATA_COLUMN].values)
+        category_df['embedding'] = category_df['embedding'].apply(lambda x: np.array(x))
+        average_mean = np.mean(np.array(category_df['embedding'].values),axis=0) # vector of 768 dim
+
+        category = 'Emotional Turmoil'
+        
+        bootstrapped_df=bootstrapped_df.append({'category':category,'mean_embedding':average_mean,'nb_sentences':nb_sentences,'sources_sentences':list(category_df[DATA_COLUMN].values)},ignore_index=True)
+        all_mean.append(average_mean)
+    
+    
+    mean_all_mean = np.mean(np.array(all_mean),axis=0)
+    bootstrapped_df=bootstrapped_df.append({'category':"All "+category,'mean_embedding':mean_all_mean,'nb_sentences':'','sources_sentences':''},ignore_index=True)
 
     return bootstrapped_df
 
@@ -139,7 +143,7 @@ async def get_stressors(session,dataset,stressor_index,category, stressor_senten
     stressor_data = "NA"
     output_data = []
     endpoint = '/query'
-    params = {'data':stressor_data,'dataset': dataset,'maxWords':15,'minWords':4,'top':10,'percent':'0.01','model':'bert','query_vector':str(list(embedding))}
+    params = {'data':stressor_data,'dataset': dataset,'maxWords':10,'minWords':4,'top':150,'percent':'0.01','model':'bert','query_vector':str(list(embedding))}
     url = f'{BASE_URL}{endpoint}'
     #print(f'Getting {category} stressor for sentence {stressor_sentence}')
     

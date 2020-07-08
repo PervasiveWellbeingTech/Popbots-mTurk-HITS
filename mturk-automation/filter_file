@@ -1,5 +1,9 @@
 """
 *** MUST READ ***
+
+The purpose of this script is to take in a dataframe after being processed through the M-Turk scripts,
+and return a dataframe that is filtered with the desired compenents of the user.
+
 This function is to be ran from the command line.
 Download this file, open your terminal and navigate to the directory it is saved in
 and then run the following command:
@@ -17,15 +21,23 @@ import random
 
 
 root = Tk()
+root.geometry('1000x600')
+root.title('DataFrame Filter Tool')
+
+# Setting up the canvas to project the window on to create scrollbar feature
+canvas = Canvas(root)
+scroll_y = Scrollbar(root, orient="vertical", command=canvas.yview)
+frame = Frame(canvas)
 
 
-def create_test_set(fil_df):
+def create_test_set(fil_df, percent, source):
     """
     This Function is for creating a big list of all the sentences that have been randomly selected
     to be apart of the test set for the classifier across all the labels. So it grabs about 20% of the sentences
     from each label and adds them to a list. This list is returned from this function.
     """
-
+    if source == 1:
+        source = True
     # Getting all the unique labels from the dataframe
     labels = fil_df['top_label'].unique().tolist()
 
@@ -33,21 +45,49 @@ def create_test_set(fil_df):
     test_set = []  # create big list that has all the sentences that are going to make the test set
     labels = fil_df['top_label'].unique().tolist()
 
-    # Determine the number of sentences that need to be added to the test set for the specific label
+
     for label in labels:
         sentence_list = fil_df[fil_df['top_label'] == label]['Input.text'].tolist() # list of all sentences for that label
-        count = len(sentence_list)
-        test_amount = count * 0.2
-        added = 0
 
-        # randomly pick sentences from the sentence list to add the the test set
-        while added <= test_amount:
-            index = random.randint(0, count - 1)
-            test_set.append(sentence_list[index])
-            del sentence_list[index]
-            added += 1
-            count -= 1
+        # The case if you want to distribute the test set amount through each source
+        if source:
+            unique_source = fil_df['Source'].unique().tolist()
+            for sourced in unique_source:
+                df = fil_df[fil_df['Source'] == sourced]
+                source_sent_list = df[df['top_label'] == label]['Input.text'].tolist()
 
+                count = len(source_sent_list)
+
+                # In the case there are no sentences for that source
+                if count == 0:
+                    continue
+
+                test_amount = count * percent
+
+                # randomly choose sentences from sentence list and append to test set list
+                added = 0
+                while added <= test_amount:
+                    index = random.randint(0, count - 1)
+                    test_set.append(sentence_list[index])
+                    del sentence_list[index]
+                    added += 1
+                    count -= 1
+
+        # If test set amount is not to be distributed through each source
+        else:
+            count = len(sentence_list)
+            test_amount = count * percent
+            added = 0
+
+            # randomly pick sentences from the sentence list to add the the test set
+            while added <= test_amount:
+                index = random.randint(0, count - 1)
+                test_set.append(sentence_list[index])
+                del sentence_list[index]
+                added += 1
+                count -= 1
+
+    # returning the big lsit of sentences that are going to be marked to be apart of the test set
     return test_set
 
 def create_set_list(test_set, fil_df):
@@ -71,7 +111,7 @@ def create_set_list(test_set, fil_df):
         set_list[index] = 1
 
     # add the testing and training list to the dataframe
-    fil_df['set'] = set_list
+    fil_df['Set'] = set_list
 
     return fil_df
 
@@ -79,7 +119,8 @@ def add_label_code(new_df):
     """
     This function creates a list where it represents the labels in integers instead of strings.
     The function appends this list to the dataframe as a column named, 'class'. This function returns the filtered
-    dataframe with the 'class' list column appended to it.
+    dataframe with the 'class' list column appended to it. The key to make sense of these coded labels
+    will be printed to the terminal
     """
 
     # Get the list of unique labels to create numerical key for
@@ -89,6 +130,7 @@ def add_label_code(new_df):
     key_dict = {}
     for i in range(len(labels)):
         key_dict[labels[i]] = i
+    print(key_dict)
 
     # create a list that is going to represent each label as the value from the dictionary
     Class = []
@@ -96,7 +138,7 @@ def add_label_code(new_df):
         Class.append(key_dict[label])
 
     # add the column to the dataframe
-    new_df['class'] = Class
+    new_df['Multi-class'] = Class
 
     return new_df
 
@@ -111,7 +153,7 @@ def add_binary_columns(fil_df):
     appened to it.
     """
 
-    # create a list of the unique labels
+    # Create a list of the unique labels
     labels = fil_df['top_label'].unique().tolist()
 
     # Create a list that marks each index that label is present with a 1
@@ -142,8 +184,15 @@ def file_selection():
     # drop the duplicate sentences
     df.drop_duplicates(subset='Input.text', keep='first', inplace=True)
 
+    return df
+
+def mix_df(df, shuff_num):
+    # Don't scramble
+    if shuff_num == 0:
+        return df
+
     # mix the df by a random sequence of numbers
-    for i in range(5):
+    for i in range(int(shuff_num)):
         random_list = random.sample(range(len(df['Input.text'])), len(df['Input.text']))
         df['scramble_seq'] = random_list  # add the list to the dataframe
         df = df.sort_values(by='scramble_seq')
@@ -159,6 +208,14 @@ def save_csv(df):
     This function takes in the final dataframe after all the filtering and column appending
     and saves it to the directory where you have this code saved.
     """
+
+    # rename sentence column to 'Sentence' for clarity
+    df.rename(columns={'Input.text': 'Sentence'}, inplace=True)
+
+    # Sort by 'Set' ascending
+    df.sort_values(by='Set', ascending=True, inplace=True)
+
+    # Save df to working directory
     pd.DataFrame(df).to_csv("Filtered_df.csv", index=False, header=True)
 
 
@@ -175,18 +232,52 @@ def filter(df, dict):
                 if value == 'is_stressor' or value == 'is_covid':
                     value = int(value)
 
-                # keep everythiing in df except for the checkbuttons that were unselected
+                # keep everything in df except for the checkbuttons that were unselected
                 df = df[df[key] != value]
 
     return df
 
-def make_checkbox(column, name, dict):
+
+def make_checkbox(column, name, dict, row, col):
     """
     This function creates the checkbutton for each unique value in a column of the dataframe.
     """
 
     # Creates checknbutton on GUI display
-    Checkbutton(root, text=str(name), variable=dict[column][name]).pack()
+    Checkbutton(frame, text=str(name), variable=dict[column][name]).grid(row=row, column=col, sticky=W)
+
+def delete(test, shuff):
+    """
+    This function aids in the closing of the tkinter window.
+    """
+    canvas.delete("all")
+    root.quit()
+    return test.get(), shuff.get()
+
+
+def options():
+    """
+    This function asks the user for the options they want considered before the dataframe is filtered.
+    Such as the number of times to shuffle the dataset, the distribution of the test set, and whether
+    or not to distribute through each Source.
+    """
+
+    # initializing variables
+    test_percent = DoubleVar()
+    test_percent.set(0.2) # sets a default variable
+    shuff_num = DoubleVar()
+    shuff_num.set(4)
+    source = IntVar()
+
+    # creating interactive widgets
+    Label(root, bg='white', text='Select Size of Test Set').pack()
+    Scale(root, bg='#b3ffb3',from_=0, to=1, resolution = 0.05, length=1000, tickinterval= 0.05, orient=HORIZONTAL,  variable=test_percent).pack()
+    Label(root, bg='white',text='Select Number of times to mix DataFrame').pack()
+    Scale(root, bg='#b3ffb3',from_=0, to=10, resolution=1, length=1000, tickinterval=1, orient=HORIZONTAL,
+          variable=shuff_num).pack()
+    Checkbutton(root, bg='white', text='Do You Want to Distribute by Source?', variable=source).pack()
+
+    return test_percent, shuff_num, source
 
 def check_box(df):
     """
@@ -195,26 +286,67 @@ def check_box(df):
     that holds all the values for the checkbuttons.
     """
 
-    # size of display
-    root.geometry('400x400')
-    Label(root, bg='green', text="Please Unselect What you Don't Want included").pack() # message at top of display
+    Label(frame, text="Deselect Items you don't want in Data Frame", font='Helvetica 10 bold').grid(row=0, column=1, sticky=E) # message at top of display
+
+    labels = df['top_label'].unique().tolist()
     grand_dict = {} # initialize dictionary
     columns = df.columns.tolist() # get list of unique columns
 
     # selected most important columns for now
-    for selector in columns[2:6]:
+    for selector in columns[2:]:
+        if 'severity' in selector or (selector in labels) or ('Votes' in selector) or 'second' in selector:
+            continue
         grand_dict[selector] = {}
 
-    # Creating all the checkboxes to be displayed on the Checkbutton GUI
+    # variables to track grid pattern on GUI
+    col = 1
+    row = 1
+    loop = 0
+
     for name in grand_dict:
         list_items = df[name].unique().tolist()
-        Label(root, bg='white', text=str(name)).pack()
+
+        # handling special case for appearence on GUI
+        if name == 'is_seed':
+            row += 3
+
+        # display name of each column in GUI
+        Label(frame, bg='white', text=str(name)).grid(row=row, column=col, sticky=W)
+        if loop % 2 == 0:
+            last_label = row
+        last = col
+        row += 1
+
+        # Creating all the checkboxes to be displayed on the Checkbutton GUI
         for item in list_items:
             grand_dict[name][item] = IntVar(value=1)
-            make_checkbox(name, item, grand_dict)
+            make_checkbox(name, item, grand_dict, row, col)
+            row += 1
+
+        # updating variables to change grid location on GUI
+        loop += 1
+        if loop % 2 != 0:
+            row = last_label
+        if last == 2:
+            col = 1
+        if last == 1:
+            col = 2
+
 
     # create an exit button
-    Button(root, text='Done', command=root.quit).pack()
+    Button(frame, bg='#66ff66', text='Done', command=root.quit).grid(column=1, sticky=E)
+
+    # put the frame in the canvas
+    canvas.create_window(0, 0, anchor='nw', window=frame)
+    # make sure everything is displayed before configuring the scrollregion
+    canvas.update_idletasks()
+
+    # configure canvas and scrollbar
+    canvas.configure(scrollregion=canvas.bbox('all'),
+                     yscrollcommand=scroll_y.set)
+    canvas.pack(fill='both', expand=True, side='left', padx=250)
+    scroll_y.pack(fill='y', side='right')
+
     root.mainloop() # Necessary to display GUI
     root.withdraw() # Exits GUI
 
@@ -226,9 +358,11 @@ def main():
     This function run all the code in the neccessary order.
     """
     df_o = file_selection()
+    test, shuff, source = options()
     dictionary = check_box(df_o)
+    df_o = mix_df(df_o, shuff.get())
     fil_df = filter(df_o, dictionary)
-    test_set = create_test_set(fil_df)
+    test_set = create_test_set(fil_df, test.get(), source.get())
     set_df = create_set_list(test_set, fil_df)
     class_df = add_label_code(set_df)
     final_df = add_binary_columns(class_df)

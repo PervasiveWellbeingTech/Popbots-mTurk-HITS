@@ -127,20 +127,24 @@ def add_label_code(new_df):
     labels = new_df['top_label'].unique().tolist()
 
     # create a dictionary that holds a value for each label
-    key_dict = {}
-    for i in range(len(labels)):
-        key_dict[labels[i]] = i
-    print(key_dict)
+    key_dict = {'Social Relationships': 0, 'Health, Fatigue, or Physical Pain': 1, 'Emotional Turmoil': 2, 'Work': 3,
+                'Family Issues': 4, 'Everyday Decision Making': 5, 'School': 6, 'Other': 7, 'Financial Problem': 8}
+    # for i in range(len(labels)):
+    #     key_dict[labels[i]] = i
+    # print(key_dict)
 
     # create a list that is going to represent each label as the value from the dictionary
     Class = []
+    og_class = []
     for label in new_df['top_label']:
         Class.append(key_dict[label])
-
+    for label in new_df['original_label']:
+        og_class.append(key_dict[label])
     # add the column to the dataframe
     new_df['Multi-class'] = Class
+    new_df['Original-Multi-Class'] = og_class
 
-    return new_df
+    return new_df, key_dict
 
 def add_binary_columns(fil_df):
     """
@@ -218,6 +222,10 @@ def save_csv(df):
     # Save df to working directory
     pd.DataFrame(df).to_csv("Filtered_df.csv", index=False, header=True)
 
+    # save dataframe settings
+
+
+
 
 def filter(df, dict):
     """
@@ -267,7 +275,8 @@ def options():
     test_percent.set(0.2) # sets a default variable
     shuff_num = DoubleVar()
     shuff_num.set(4)
-    source = IntVar()
+    og_label = IntVar()
+
 
     # creating interactive widgets
     Label(root, bg='white', text='Select Size of Test Set').pack()
@@ -275,9 +284,10 @@ def options():
     Label(root, bg='white',text='Select Number of times to mix DataFrame').pack()
     Scale(root, bg='#b3ffb3',from_=0, to=10, resolution=1, length=1000, tickinterval=1, orient=HORIZONTAL,
           variable=shuff_num).pack()
-    Checkbutton(root, bg='white', text='Do You Want to Distribute by Source?', variable=source).pack()
+    # Checkbutton(root, bg='white', text='Use top_label or original_label?', variable=og_label).pack()
 
-    return test_percent, shuff_num, source
+
+    return test_percent, shuff_num#, og_label
 
 def check_box(df):
     """
@@ -294,7 +304,9 @@ def check_box(df):
 
     # selected most important columns for now
     for selector in columns[2:]:
-        if 'severity' in selector or (selector in labels) or ('Votes' in selector) or 'second' in selector:
+        if 'severity' in selector or (selector in labels) or ('Votes' in selector) or 'second' in selector or 'ID' in selector:
+            continue
+        if 'origi' in selector:
             continue
         grand_dict[selector] = {}
 
@@ -333,6 +345,10 @@ def check_box(df):
             col = 2
 
 
+    # Display Source Button at Bottom
+    source = IntVar()
+    Checkbutton(frame, bg='white', text='Do You Want to Distribute Test Set by Source?', variable=source).grid(column=1, sticky=E)
+
     # create an exit button
     Button(frame, bg='#66ff66', text='Done', command=root.quit).grid(column=1, sticky=E)
 
@@ -350,22 +366,44 @@ def check_box(df):
     root.mainloop() # Necessary to display GUI
     root.withdraw() # Exits GUI
 
-    return grand_dict
+    return grand_dict, source
 
+def df_settings(dictionary, source, dict):
+
+    settings = ["DATA FRAME SETTINGS \nThis is what is included in the dictionary: \n\n"]
+
+    for column in dictionary:
+        settings.append(str(column) + '\n')
+        for option in dictionary[column]:
+            if dictionary[column][option].get() == 1:
+                settings.append(str(option) + " \n")
+        settings.append('\n')
+
+    if source == 1:
+        settings.append('Test Set Distributed by Source? \n' + 'yes\n\n')
+    else:
+        settings.append('Test Set Distributed by Source? \n' + 'no\n\n')
+
+    settings.append('Multi-Class Encoding Key:\n')
+    settings.append(str(dict))
+
+    file = open("DataFrame_Settings.txt", "w")
+    file.writelines(settings)
 
 def main():
     """
     This function run all the code in the neccessary order.
     """
     df_o = file_selection()
-    test, shuff, source = options()
-    dictionary = check_box(df_o)
+    test, shuff= options()
+    dictionary, source = check_box(df_o)
     df_o = mix_df(df_o, shuff.get())
     fil_df = filter(df_o, dictionary)
     test_set = create_test_set(fil_df, test.get(), source.get())
     set_df = create_set_list(test_set, fil_df)
-    class_df = add_label_code(set_df)
+    class_df, key_dict = add_label_code(set_df)
     final_df = add_binary_columns(class_df)
+    df_settings(dictionary, source.get(), key_dict)
     save_csv(final_df)
 
 if __name__ == '__main__':

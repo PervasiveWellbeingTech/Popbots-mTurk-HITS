@@ -73,6 +73,8 @@ Sweep = False
 # Read data from converted/compiled CSV (Assumes data is sorted by 'Set' column ascending)
 # TODO: See how the TF_IDF features parse the list and use that here instead of relying on the ordering of 'Set'
 df = pd.read_csv(Input_File)
+TargetNamesStrings = [str(x) for x in df[Label].unique().tolist()]
+TargetNames = df[Label].unique().tolist()
 dataset = (df['Set'] == 0).sum()
 
 # Preview the first 5 lines of the loaded data

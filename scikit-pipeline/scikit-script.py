@@ -45,6 +45,8 @@ def clean(doc):
 
 
 # Settings & Variables
+key_dict = {0: 'Social Relationships', 1: 'Health, Fatigue, or Physical Pain', 2: 'Emotional Turmoil', 3: 'Work', 
+           4: 'Family Issues', 5: 'Everday Decision Making', 6: 'School', 7: 'Other', 8: 'Financial Problem'}
 Input_File = "Filtered_df.csv"
 output_model_filename = 'finalized_model.sav'
 output_probs = "output_probs.csv"
@@ -56,13 +58,13 @@ Sweep = False
 # Silly additional settings that need to reflect the number of classes in your dataset
 # And, unfortunately you'll need to edit some of the display functions below as well
 # TODO: Cleanup
-TargetNamesStrings = ["0", "1"]
-if Label == "Multi-class":
-    TargetNamesStrings = ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
+# TargetNamesStrings = ["0", "1"]
+# if Label == "Multi-class":
+#     TargetNamesStrings = ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
 
-TargetNames = np.asarray([0, 1])
-if Label == "Multi-class":
-    TargetNames = np.asarray([0, 1, 2, 3, 4, 5, 6, 7, 8])
+# TargetNames = np.asarray([0, 1])
+# if Label == "Multi-class":
+#     TargetNames = np.asarray([0, 1, 2, 3, 4, 5, 6, 7, 8])
 
 # ----------------------------------------
 # SCRIPT PROCESSING
@@ -85,30 +87,14 @@ df["Sentence"] = df["Sentence"].apply(clean)
 # Let's do some quick counts
 # TODO: Make this dynamic so we don't have to interact with the code here to change # of labels above
 CategoryLabels = list(df[Label])
-Category0 = CategoryLabels.count(0)
-Category1 = CategoryLabels.count(1)
-if Label == "Multi-class":
-    Category2 = CategoryLabels.count(2)
-    Category3 = CategoryLabels.count(3)
-    Category4 = CategoryLabels.count(4)
-    Category5 = CategoryLabels.count(5)
-    Category6 = CategoryLabels.count(6)
-    Category7 = CategoryLabels.count(7)
-    Category8 = CategoryLabels.count(8)
+unique_labels = df[Label].unique().tolist()
+label_sum = float(len(CategoryLabels))
 
 print(" ")
 print("===============")
 print("Data Distribution:")
-print('Category0 contains:', Category0, float(Category0) / float(len(CategoryLabels)))
-print('Category1 contains:', Category1, float(Category1) / float(len(CategoryLabels)))
-if Label == "Multi-class":
-    print('Category2 contains:', Category2, float(Category2) / float(len(CategoryLabels)))
-    print('Category3 contains:', Category3, float(Category3) / float(len(CategoryLabels)))
-    print('Category4 contains:', Category4, float(Category4) / float(len(CategoryLabels)))
-    print('Category5 contains:', Category5, float(Category5) / float(len(CategoryLabels)))
-    print('Category6 contains:', Category6, float(Category6) / float(len(CategoryLabels)))
-    print('Category7 contains:', Category7, float(Category7) / float(len(CategoryLabels)))
-    print('Category8 contains:', Category8, float(Category8) / float(len(CategoryLabels)))
+for label in unique_labels:
+    print(str(key_dict[label]) +  ' contains:', CategoryLabels.count(label), float(CategoryLabels.count(label) / label_sum))
 
 # Beginning to calculate features include BERT and TF-IDF; this process can be a bit of bottleneck
 # TODO: Consider writing these variables to a file to "pre-compute" them if experiments are taking awhile
@@ -276,6 +262,8 @@ print('Macro:  ', precision_recall_fscore_support(test[Label], preds, average='m
 print('Micro:  ', precision_recall_fscore_support(test[Label], preds, average='micro'))
 print('Weighted', precision_recall_fscore_support(test[Label], preds, average='weighted'))
 print(" ")
+
+# *** Try sticking in the labels for the TargetNamesStrings where we are actually showing the class name ***
 print(classification_report(test[Label], preds, target_names=TargetNamesStrings))
 
 # Generate PR Curve (if doing a binary classification)

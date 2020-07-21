@@ -43,7 +43,6 @@ def create_test_set(fil_df, percent, source):
 
     # Creating the test set list
     test_set = []  # create big list that has all the sentences that are going to make the test set
-    labels = fil_df['top_label'].unique().tolist()
 
 
     for label in labels:
@@ -55,6 +54,7 @@ def create_test_set(fil_df, percent, source):
             for sourced in unique_source:
                 df = fil_df[fil_df['Source'] == sourced]
                 source_sent_list = df[df['top_label'] == label]['Input.text'].tolist()
+
 
                 count = len(source_sent_list)
 
@@ -75,6 +75,8 @@ def create_test_set(fil_df, percent, source):
 
         # If test set amount is not to be distributed through each source
         else:
+
+
             count = len(sentence_list)
             test_amount = count * percent
             added = 0
@@ -227,11 +229,14 @@ def save_csv(df):
 
 
 
-def filter(df, dict):
+def filter(df, dict, sliders):
     """
     This function does the filtering of the dataframe. It returns the dataframe with the items
     that the user chose to keep.
     """
+
+    # reducing the sample sentence size to what was indicated by the sliders
+
 
     # loop through each value of the checkbutton
     for key in dict:
@@ -242,6 +247,15 @@ def filter(df, dict):
 
                 # keep everything in df except for the checkbuttons that were unselected
                 df = df[df[key] != value]
+
+    for label in sliders:
+        count = int(sliders[label].get())
+        sentences = df[df['top_label'] == label]['Input.text'].tolist()
+        if len(sentences) < int(count):
+            continue
+
+        for sentence in sentences[int(count):]:
+            df = df[df['Input.text'] != sentence]
 
     return df
 
@@ -279,11 +293,12 @@ def options():
 
 
     # creating interactive widgets
-    Label(root, bg='white', text='Select Size of Test Set').pack()
-    Scale(root, bg='#b3ffb3',from_=0, to=1, resolution = 0.05, length=1000, tickinterval= 0.05, orient=HORIZONTAL,  variable=test_percent).pack()
-    Label(root, bg='white',text='Select Number of times to mix DataFrame').pack()
-    Scale(root, bg='#b3ffb3',from_=0, to=10, resolution=1, length=1000, tickinterval=1, orient=HORIZONTAL,
-          variable=shuff_num).pack()
+    Label(root, bg='#b3ffb3', text='Select Size of Test Set', font=("TimesNewRoman", 8)).pack()
+    Scale(root, bg='white',from_=0, to=1, resolution = 0.05, length=1000, orient=HORIZONTAL,
+          variable=test_percent, width=10, font=("TimesNewRoman", 8)).pack()
+    Label(root, bg='#b3ffb3',text='Select Number of times to mix DataFrame', font=("TimesNewRoman", 8)).pack()
+    Scale(root, bg='white',from_=0, to=10, resolution=1, length=1000, orient=HORIZONTAL,
+          variable=shuff_num, width=10, font=("TimesNewRoman", 8)).pack()
     # Checkbutton(root, bg='white', text='Use top_label or original_label?', variable=og_label).pack()
 
 
@@ -304,10 +319,10 @@ def check_box(df):
 
     # selected most important columns for now
     for selector in columns[2:]:
-        if 'severity' in selector or (selector in labels) or ('Votes' in selector) or 'second' in selector or 'ID' in selector:
+        if 'severity' in selector or (selector in labels) or ('Votes' in selector) or ('second' in selector) or \
+                ('ID' in selector) or ('Answer' in selector) or ('origi' in selector):
             continue
-        if 'origi' in selector:
-            continue
+
         grand_dict[selector] = {}
 
     # variables to track grid pattern on GUI
@@ -368,9 +383,27 @@ def check_box(df):
 
     return grand_dict, source
 
+def add_label_sliders(df):
+    labels = df['top_label'].unique().tolist()
+    slider_dict = {}
+    for label in labels:
+        count = len(df[df['top_label'] == label])
+        slider_dict[label] = DoubleVar()
+        slider_dict[label].set(count)
+        Label(root, bg='#b3ffb3', text='Select Max Sample For ' + str(label), font=("TimesNewRoman", 8)).pack()
+        make_slider(count, label, slider_dict)
+
+    return slider_dict
+
+
+def make_slider(cap, variable, dict):
+    Scale(root, bg='white', from_=0, to=cap, length=1000, orient=HORIZONTAL,
+          variable=dict[variable], width=10, font=("TimesNewRoman", 8)).pack()
+
+
 def df_settings(dictionary, source, dict):
 
-    settings = ["DATA FRAME SETTINGS \nThis is what is included in the dictionary: \n\n"]
+    settings = ["DATA FRAME SETTINGS \nThis is what is included in the data frame: \n\n"]
 
     for column in dictionary:
         settings.append(str(column) + '\n')
@@ -396,9 +429,10 @@ def main():
     """
     df_o = file_selection()
     test, shuff= options()
+    slider_dict = add_label_sliders(df_o)
     dictionary, source = check_box(df_o)
     df_o = mix_df(df_o, shuff.get())
-    fil_df = filter(df_o, dictionary)
+    fil_df = filter(df_o, dictionary, slider_dict)
     test_set = create_test_set(fil_df, test.get(), source.get())
     set_df = create_set_list(test_set, fil_df)
     class_df, key_dict = add_label_code(set_df)

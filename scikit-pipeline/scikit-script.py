@@ -10,6 +10,7 @@ import csv
 import pickle
 import pandas as pd
 import string
+from tkinter import Tk, filedialog
 # import nltk
 # nltk.download('stopwords')
 # nltk.download('wordnet')
@@ -31,6 +32,13 @@ import seaborn as sn
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics import precision_recall_fscore_support, classification_report
 
+# Select File
+root = Tk()
+root.filename = filedialog.askopenfilename()
+file = root.filename
+root.withdraw()
+
+
 # (NLTK) Helper Settings
 stop = set(stopwords.words('english'))
 exclude = set(string.punctuation)
@@ -47,7 +55,7 @@ def clean(doc):
 # Settings & Variables
 key_dict = {0: 'Social Relationships', 1: 'Health, Fatigue, or Physical Pain', 2: 'Emotional Turmoil', 3: 'Work', 
            4: 'Family Issues', 5: 'Everday Decision Making', 6: 'School', 7: 'Other', 8: 'Financial Problem'}
-Input_File = "Filtered_df.csv"
+Input_File = file
 output_model_filename = 'finalized_model.sav'
 output_probs = "output_probs.csv"
 Label = "Multi-class"
@@ -267,6 +275,19 @@ print(" ")
 
 # *** Try sticking in the labels for the TargetNamesStrings where we are actually showing the class name ***
 print(classification_report(test[Label], preds, target_names=TargetNamesStrings))
+
+# write this to a txt file
+class_report = open('classification_report.txt', 'w')
+class_report.write(str(('Macro:  ', precision_recall_fscore_support(test[Label], preds, average='macro'))))
+class_report.write('\n')
+class_report.write(str(('Micro:  ', precision_recall_fscore_support(test[Label], preds, average='micro'))))
+class_report.write('\n')
+class_report.write(str(('Weighted', precision_recall_fscore_support(test[Label], preds, average='weighted'))))
+class_report.write('\n')
+class_report.write(str(classification_report(test[Label], preds, target_names=TargetNamesStrings)))
+class_report.close()
+
+
 
 # Generate PR Curve (if doing a binary classification)
 if (Algorithm == "SVC" or Algorithm == "SVC-Sweep") and Label != "Multi-class":

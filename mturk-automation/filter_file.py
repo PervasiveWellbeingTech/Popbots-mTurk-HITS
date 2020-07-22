@@ -39,7 +39,7 @@ def create_test_set(fil_df, percent, source):
     if source == 1:
         source = True
     # Getting all the unique labels from the dataframe
-    labels = fil_df['top_label'].unique().tolist()
+    labels = fil_df['original_label'].unique().tolist()
 
     # Creating the test set list
     test_set = []  # create big list that has all the sentences that are going to make the test set
@@ -331,7 +331,15 @@ def check_box(df):
     loop = 0
 
     for name in grand_dict:
+        if loop % 2 == 0 and loop > 0:
+            if left_count > right_count:
+                row = left_count + 1
+            else:
+                row = right_count + 1
         list_items = df[name].unique().tolist()
+        if loop % 2 != 0:
+            right_count = row + len(list_items)
+
 
         # handling special case for appearence on GUI
         if name == 'is_seed':
@@ -340,6 +348,7 @@ def check_box(df):
         # display name of each column in GUI
         Label(frame, bg='white', text=str(name)).grid(row=row, column=col, sticky=W)
         if loop % 2 == 0:
+            left_count = row + len(list_items)
             last_label = row
         last = col
         row += 1
@@ -401,10 +410,18 @@ def make_slider(cap, variable, dict):
           variable=dict[variable], width=10, font=("TimesNewRoman", 8)).pack()
 
 
-def df_settings(dictionary, source, dict):
+def df_settings(dictionary, source, dict, sliders, test, shuff):
 
     settings = ["DATA FRAME SETTINGS \nThis is what is included in the data frame: \n\n"]
-
+    
+    settings.append('Test Distribution: ' + str(test.get()) + '\n\n')
+    settings.append('Data Shuffled ' + str(shuff.get()) + ' times\n\n')
+    
+    for slider in sliders:
+        settings.append('Sample limit for ' + str(slider) + '\n')
+        settings.append(str(sliders[slider].get()) + '\n\n')
+    
+    
     for column in dictionary:
         settings.append(str(column) + '\n')
         for option in dictionary[column]:
@@ -437,7 +454,7 @@ def main():
     set_df = create_set_list(test_set, fil_df)
     class_df, key_dict = add_label_code(set_df)
     final_df = add_binary_columns(class_df)
-    df_settings(dictionary, source.get(), key_dict)
+    df_settings(dictionary, source.get(), key_dict, slider_dict, test, shuff)
     save_csv(final_df)
 
 if __name__ == '__main__':

@@ -66,13 +66,6 @@ Sweep = False
 # Silly additional settings that need to reflect the number of classes in your dataset
 # And, unfortunately you'll need to edit some of the display functions below as well
 # TODO: Cleanup
-# TargetNamesStrings = ["0", "1"]
-# if Label == "Multi-class":
-#     TargetNamesStrings = ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
-
-# TargetNames = np.asarray([0, 1])
-# if Label == "Multi-class":
-#     TargetNames = np.asarray([0, 1, 2, 3, 4, 5, 6, 7, 8])
 
 # ----------------------------------------
 # SCRIPT PROCESSING
@@ -83,10 +76,16 @@ Sweep = False
 df = pd.read_csv(Input_File)
 TargetNamesStrings = [str(x) for x in df[Label].unique().tolist()]
 TargetNames = df[Label].unique().tolist()
+TargetNames.sort()
+
 dataset = (df['Set'] == 0).sum()
+
+class_report = open('scikit_report.txt', 'w')
 
 # Preview the first 5 lines of the loaded data
 print(df.head())
+class_report.write(str(df.head()))
+class_report.write('\n')
 
 # Cast labels
 df[Label] = df[Label].astype(int)
@@ -97,25 +96,35 @@ df["Sentence"] = df["Sentence"].apply(clean)
 # Let's do some quick counts
 # TODO: Make this dynamic so we don't have to interact with the code here to change # of labels above
 CategoryLabels = list(df[Label])
-unique_labels = df[Label].unique().tolist()
 label_sum = float(len(CategoryLabels))
 
+
 print(" ")
+class_report.write(" \n")
 print("===============")
+class_report.write("===============\n")
 print("Data Distribution:")
-for label in unique_labels:
-    print(str(key_dict[label]) +  ' contains:', CategoryLabels.count(label), float(CategoryLabels.count(label) / label_sum))
+class_report.write("Data Distribution:\n")
+for label in TargetNames:
+    print(str(label) + ' ' + str(key_dict[label]) +  ' contains:', CategoryLabels.count(label), round(float(CategoryLabels.count(label) / label_sum), 2))
+    class_report.write(str(label) + ' ' + str(key_dict[label]) +  ' contains:' + ' ' + str(CategoryLabels.count(label)) + ' ' + str(round(float(CategoryLabels.count(label) / label_sum), 2)))
+    class_report.write('\n')
 
 # Beginning to calculate features include BERT and TF-IDF; this process can be a bit of bottleneck
 # TODO: Consider writing these variables to a file to "pre-compute" them if experiments are taking awhile
 print(" ")
+class_report.write(" \n")
 print("===============")
+class_report.write("===============\n")
 print("Fitting Features: ")
+class_report.write("Fitting Features: \n")
 print(" ")
+class_report.write('\n')
 bert_dimension = 0
 if Features == "All" or Features == "BERT":
     # Create BERT Features and add to data frame
     print('Fitting BERT Features')
+    class_report.write('Fitting BERT Features')
     model = SentenceTransformer('bert-base-nli-mean-tokens')
     sentences = df['Sentence'].tolist()
     sentence_embeddings = model.encode(sentences)
@@ -191,11 +200,17 @@ test[Label] = pd.Categorical.from_codes(test_labels, TargetNames)
 
 # Show the number of observations for the test and training data frames
 print(" ")
+class_report.write('\n')
 print("===============")
+class_report.write("===============\n")
 print("Fold Information: ")
+class_report.write("Fold Information: \n")
 print('Number of observations in the training data:', len(train))
+class_report.write('Number of observations in the training data: ' +  str(len(train)) + '\n')
 print('Number of observations in the test data:', len(test))
+class_report.write('Number of observations in the test data: ' +  str(len(test)) + '\n')
 print('Number of features generated:', str(tf_dimension + bert_dimension))
+class_report.write('Number of features generated: ' +  str(tf_dimension + bert_dimension) + '\n')
 
 # Create a list of the feature column's names
 features = train.columns[:(tf_dimension + bert_dimension)]
@@ -233,9 +248,13 @@ if Algorithm == "SVC" or Algorithm == "SVC-Sweep":
 
 # View the PREDICTED classes for the first five observations
 print(" ")
+class_report.write('\n')
 print("===============")
+class_report.write("===============\n")
 print("Example Prediction: ")
+class_report.write("Example Prediction: \n")
 print(preds[0:5])
+class_report.write(str(preds[0:5]))
 if Algorithm == "SVC" or Algorithm == "SVC-Sweep":
     with open(output_probs, 'w', newline='') as my_csv:
         csvWriter = csv.writer(my_csv, delimiter=',')
@@ -243,17 +262,26 @@ if Algorithm == "SVC" or Algorithm == "SVC-Sweep":
 
 # View the ACTUAL classes for the first five observations
 print(" ")
+class_report.write('\n')
 print("===============")
+class_report.write("===============\n")
 print("Actual: ")
+class_report.write("Actual: \n")
 print(str(test[Label].head()))
+class_report.write(str(test[Label].head()) + '\n')
 
 # Create confusion matrix
 print(" ")
+class_report.write('\n')
 print("===============")
+class_report.write("===============\n")
 print("Confusion Matrix: ")
+class_report.write("Confusion Matrix: \n")
 print(" ")
+class_report.write('\n')
 confusion_matrix = pd.crosstab(test[Label], preds, rownames=['Actual Categories'], colnames=['Predicted Categories'])
 print(str(pd.crosstab(test[Label], preds, rownames=['Actual Categories'], colnames=['Predicted Categories'])))
+class_report.write(str(pd.crosstab(test[Label], preds, rownames=['Actual Categories'], colnames=['Predicted Categories'])))
 
 # Show confusion matrix in a separate window
 sn.set(font_scale=1.4)  # for label size
@@ -267,25 +295,27 @@ print(" ")
 print("===============")
 print("Classification Report: ")
 print(" ")
+class_report.write('\n')
+class_report.write("===========\n")
+class_report.write("Classification Report: \n")
+class_report.write(" \n")
 print("Precision, Recall, Fbeta Stats: ")
 print('Macro:  ', precision_recall_fscore_support(test[Label], preds, average='macro'))
 print('Micro:  ', precision_recall_fscore_support(test[Label], preds, average='micro'))
 print('Weighted', precision_recall_fscore_support(test[Label], preds, average='weighted'))
 print(" ")
+class_report.write("Precision, Recall, Fbeta Stats: \n")
+class_report.write('Macro:  ' + str(precision_recall_fscore_support(test[Label], preds, average='macro')) + '\n')
+class_report.write('Micro:  ' + str(precision_recall_fscore_support(test[Label], preds, average='micro')) + '\n')
+class_report.write('Weighted' + str(precision_recall_fscore_support(test[Label], preds, average='weighted')) + '\n')
+class_report.write(" \n")
 
-# *** Try sticking in the labels for the TargetNamesStrings where we are actually showing the class name ***
+
+target_names_int = [int(name) for name in TargetNamesStrings]
+target_names_int.sort()
+TargetNamesStrings = [str(key_dict[x]) + '-' + str(x) for x in target_names_int]
 print(classification_report(test[Label], preds, target_names=TargetNamesStrings))
-
-# write this to a txt file
-class_report = open('classification_report.txt', 'w')
-class_report.write(str(('Macro:  ', precision_recall_fscore_support(test[Label], preds, average='macro'))))
-class_report.write('\n')
-class_report.write(str(('Micro:  ', precision_recall_fscore_support(test[Label], preds, average='micro'))))
-class_report.write('\n')
-class_report.write(str(('Weighted', precision_recall_fscore_support(test[Label], preds, average='weighted'))))
-class_report.write('\n')
 class_report.write(str(classification_report(test[Label], preds, target_names=TargetNamesStrings)))
-class_report.close()
 
 
 
@@ -294,6 +324,7 @@ if (Algorithm == "SVC" or Algorithm == "SVC-Sweep") and Label != "Multi-class":
     y_score = clf.decision_function(test[features])
     average_precision = average_precision_score(test[Label], y_score)
     print('Average precision-recall score: {0:0.2f}'.format(average_precision))
+    class_report.write('Average precision-recall score: {0:0.2f}'.format(average_precision) + '\n')
     disp = plot_precision_recall_curve(clf, test[features], test[Label])
     # TODO: Bug below
     # disp.ax_.set_title('2-class Precision-Recall curve: ', 'AP={0:0.2f}'.format(average_precision))
@@ -315,10 +346,15 @@ if Sweep and Algorithm == "SVC":
     ]
 
     print("")
+    class_report.write('\n')
     print("Starting GridSearch; this could take some time...")
     search = GridSearchCV(clf, param_grid, cv=5, n_jobs=-1).fit(train[features], train[Label])
     print(search.best_params_)
     print(search.best_score_)
     print(search.best_estimator_)
+    class_report.write(str(search.best_params_))
+    class_report.write(str(search.best_score_))
+    class_report.write(str(search.best_estimator_))
 
+class_report.close()
 exit()

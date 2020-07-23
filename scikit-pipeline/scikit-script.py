@@ -320,14 +320,14 @@ class_report.write(str(classification_report(test[Label], preds, target_names=Ta
 
 
 # Generate PR Curve (if doing a binary classification)
-if (Algorithm == "SVC" or Algorithm == "SVC-Sweep") and Label != "Multi-class":
+if (Algorithm == "SVC" or Algorithm == "SVC-Sweep") and (Label != "Multi-class" and Label != "Original-Multi-Class"):
     y_score = clf.decision_function(test[features])
     average_precision = average_precision_score(test[Label], y_score)
     print('Average precision-recall score: {0:0.2f}'.format(average_precision))
     class_report.write('Average precision-recall score: {0:0.2f}'.format(average_precision) + '\n')
     disp = plot_precision_recall_curve(clf, test[features], test[Label])
-    # TODO: Bug below
-    # disp.ax_.set_title('2-class Precision-Recall curve: ', 'AP={0:0.2f}'.format(average_precision))
+#     TODO: Bug below
+    disp.ax_.set_title('2-class Precision-Recall curve: ', 'AP={0:0.2f}'.format(average_precision))
     plt.show()
 
 # save the model to disk

@@ -56,6 +56,7 @@ def clean(doc):
 key_dict = {0: 'Social Relationships', 1: 'Health, Fatigue, or Physical Pain', 2: 'Emotional Turmoil', 3: 'Work', 
            4: 'Family Issues', 5: 'Everday Decision Making', 6: 'School', 7: 'Other', 8: 'Financial Problem'}
 Input_File = file
+print(Input_File)
 output_model_filename = 'finalized_model.sav'
 output_probs = "output_probs.csv"
 Label = "Multi-class"
@@ -81,6 +82,7 @@ TargetNames.sort()
 dataset = (df['Set'] == 0).sum()
 
 class_report = open('scikit_report.txt', 'w')
+class_report.write(str(Input_File) + '\n')
 
 # Preview the first 5 lines of the loaded data
 print(df.head())
@@ -195,8 +197,12 @@ test_labels = test_labels.astype(int)
 # Create final dataset for Testing & Training by joining Labels
 train = pd.DataFrame(training_corpus)
 test = pd.DataFrame(test_corpus)
-train[Label] = pd.Categorical.from_codes(training_labels, TargetNames)
-test[Label] = pd.Categorical.from_codes(test_labels, TargetNames)
+mapping = dict(zip(np.unique(training_labels), np.arange(len(TargetNames))))
+mapping_2 = dict(zip(np.unique(test_labels), np.arange(len(TargetNames))))
+
+
+train[Label] = pd.Categorical.from_codes(pd.Series(training_labels).map(mapping), TargetNames)
+test[Label] = pd.Categorical.from_codes(pd.Series(test_labels).map(mapping_2), TargetNames)
 
 # Show the number of observations for the test and training data frames
 print(" ")

@@ -4,3 +4,9 @@
 /mturk-automation/*.xlsx
 /mturk-automation/.ipynb_checkpoints/*.ipynb
 bert-pipeline/tfmode/
+/scikit-pipeline/scikit_report.txt
+/scikit-pipeline/.idea
+/mturk-automation/*.txt
+/scikit-pipeline/*.txt
+/scikit-pipeline/*.sav
+/scikit-pipeline/*.csv

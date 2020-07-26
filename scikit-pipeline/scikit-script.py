@@ -53,8 +53,10 @@ def clean(doc):
 
 
 # Settings & Variables
-key_dict = {0: 'Social Relationships', 1: 'Health, Fatigue, or Physical Pain', 2: 'Emotional Turmoil', 3: 'Work', 
-           4: 'Family Issues', 5: 'Everday Decision Making', 6: 'School', 7: 'Other', 8: 'Financial Problem'}
+# TODO: Populate key_dict dynamically based on what the Label is...
+#key_dict = {0: 'Social Relationships', 1: 'Health, Fatigue, or Physical Pain', 2: 'Emotional Turmoil', 3: 'Work',
+#           4: 'Family Issues', 5: 'Everday Decision Making', 6: 'School', 7: 'Other', 8: 'Financial Problem'}
+#key_dict = {1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10'}
 Input_File = file
 print(Input_File)
 output_model_filename = 'finalized_model.sav'
@@ -63,10 +65,6 @@ Label = "Multi-class"
 Features = "BERT"
 Algorithm = "SVC"
 Sweep = False
-
-# Silly additional settings that need to reflect the number of classes in your dataset
-# And, unfortunately you'll need to edit some of the display functions below as well
-# TODO: Cleanup
 
 # ----------------------------------------
 # SCRIPT PROCESSING

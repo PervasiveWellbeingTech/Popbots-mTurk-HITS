@@ -4,6 +4,7 @@
 /mturk-automation/*.xlsx
 /mturk-automation/.ipynb_checkpoints/*.ipynb
 bert-pipeline/tfmode/
+bert-pipeline/tfmodel_covid/
 /scikit-pipeline/scikit_report.txt
 /scikit-pipeline/.idea
 /mturk-automation/*.txt

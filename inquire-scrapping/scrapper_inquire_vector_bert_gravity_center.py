@@ -49,12 +49,12 @@ def read_process_dataset():
 
     
 
-    nb_sentences = 75
+    nb_sentences = 10
     all_mean = []
     for i in range(boostrap_number):
 
         
-        category_df= pd.DataFrame(df.groupby('class').apply(lambda x: x.sample(nb_sentences).reset_index(drop=True)))
+        category_df= pd.DataFrame(df.groupby(LABEL_COLUMN_RAW).apply(lambda x: x.sample(nb_sentences).reset_index(drop=True)))
         #category_df_unsampled = df[df[LABEL_COLUMN_RAW] == category]
         
         category_df['embedding'] = model.encode(category_df[DATA_COLUMN].values)
@@ -143,7 +143,7 @@ async def get_stressors(session,dataset,stressor_index,category, stressor_senten
     stressor_data = "NA"
     output_data = []
     endpoint = '/query'
-    params = {'data':stressor_data,'dataset': dataset,'maxWords':10,'minWords':4,'top':150,'percent':'0.01','model':'bert','query_vector':str(list(embedding))}
+    params = {'data':stressor_data,'dataset': dataset,'maxWords':20,'minWords':4,'top':300,'percent':'0.01','model':'bert','query_vector':str(list(embedding))}
     url = f'{BASE_URL}{endpoint}'
     #print(f'Getting {category} stressor for sentence {stressor_sentence}')
     

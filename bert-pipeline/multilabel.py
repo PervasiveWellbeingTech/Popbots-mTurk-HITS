@@ -384,7 +384,7 @@ def convert_examples_to_features(examples,  max_seq_length, tokenizer):
 
     features = []
     for (ex_index, example) in enumerate(examples):
-        print(example.text_a)
+        #print(example.text_a)
         tokens_a = tokenizer.tokenize(example.text_a)
 
         tokens_b = None
@@ -990,15 +990,15 @@ for i in range(boostrap_nb):
     train,test = data_prep_bert(dataset,TEST_PERCENTAGE)
 
     info,report = train_evaluate(train, test)
-
+    print(report)
     eval_info.append(info)
-    eval_classification_report.append(report.to_numpy().to_list())
+    eval_classification_report.append(report.to_numpy().tolist())
 
 
-with open(EXPERIMENTS_PATH+"eval_info.txt", "w") as output:
+with open(EXPERIMENTS_PATH+"/eval_info.txt", "w") as output:
     output.write(str(eval_info))
 
-with open(EXPERIMENTS_PATH+"eval_classifier_report.txt", "w") as output:
+with open(EXPERIMENTS_PATH+"/eval_classifier_report.txt", "w") as output:
     output.write(str(eval_classification_report))
 
 

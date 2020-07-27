@@ -608,11 +608,11 @@ for i in range(boostrap_nb):
     info,report = train_evaluate(train, test)
 
     eval_info.append(info)
-    eval_classification_report.append(report.to_numpy().to_list())
+    eval_classification_report.append(report.to_numpy().tolist())
 
 
-with open(EXPERIMENTS_PATH+"eval_info.txt", "w") as output:
+with open(EXPERIMENTS_PATH+"/eval_info.txt", "w") as output:
     output.write(str(eval_info))
 
-with open(EXPERIMENTS_PATH+"eval_classifier_report.txt", "w") as output:
+with open(EXPERIMENTS_PATH+"/eval_classifier_report.txt", "w") as output:
     output.write(str(eval_classification_report))

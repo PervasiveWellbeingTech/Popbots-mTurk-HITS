@@ -22,7 +22,7 @@
 # - exporting to pb format for tensorflow serving api
 import os
 
-os.environ['LD_LIBRARY_PATH'] = '/usr/local/cuda-10.0/lib64:/usr/local/cuda-10.0/lib'
+os.environ['LD_LIBRARY_PATH'] = '/usr/local/cuda-10.0/lib64'
 import sys
 print(sys.executable)
 
@@ -301,8 +301,8 @@ DATASET_NAME = '2020-06-20-MainTurkAggregation-5-Turkers_v0'
 
 DATA_COLUMN = 'Input.text'
 LABEL_COLUMN_RAW = 'top_label'#'Answer.Label'
-LABEL_COLUMN = 'label_numeric'
 
+LABEL_COLUMN = 'label_numeric'
 MTURK_NAME = 'mTurk_synthetic'
 LIVE_NAME = 'popbots_live'
 INQUIRE_NAME = 'Inquire'

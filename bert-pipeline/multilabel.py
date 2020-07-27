@@ -22,7 +22,7 @@
 # - exporting to pb format for tensorflow serving api
 import os
 
-os.environ['LD_LIBRARY_PATH'] = '/usr/local/cuda-10.0/lib64:/usr/local/cuda-10.0/lib'
+os.environ['LD_LIBRARY_PATH'] = '/usr/local/cuda-10.0/lib64'
 import sys
 print(sys.executable)
 

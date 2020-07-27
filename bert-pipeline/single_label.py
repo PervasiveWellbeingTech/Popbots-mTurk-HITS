@@ -297,11 +297,11 @@ OUTPUT_DIR = './models/'+ TODAY_DATE+EXPERIMENT_NAME+'/'
 
 
 
-DATASET_NAME = '2020-06-08-MainTurkAggregation-5-Turkers_v0'
+DATASET_NAME = '2020-06-20-MainTurkAggregation-5-Turkers_v0'
 
 DATA_COLUMN = 'Input.text'
-LABEL_COLUMN_RAW = 'is_covid'#'Answer.Label'
-LABEL_COLUMN = 'is_covid'
+LABEL_COLUMN_RAW = 'top_label'#'Answer.Label'
+LABEL_COLUMN = 'label_numeric'
 
 MTURK_NAME = 'mTurk_synthetic'
 LIVE_NAME = 'popbots_live'

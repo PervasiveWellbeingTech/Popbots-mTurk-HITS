@@ -18,7 +18,8 @@ This script is to be ran from the command line. The CSV file that is returned fr
 ## 4. Scikit Classification
 This script is to be ran from the command line. The CSV file that is returned from the filtering script is to be used as input for the scikit classification script. This script is to be edited manually to change the algorithm settings for the classifier and then will run the classifier on the test and training set that is returned from the dataframe filtering script. It returns the classification model, the probabilities, and a text file of the classification report and confusion matrix. 
 
-Prerequisites: Requires Python3 and potentially non-standard libraries including pandas, numpy, statistics, and matplotlib, Ipywidgets, pyoperators, and tkintertable that can be installed using Pip or a similar installers. For running the notebook locally, install Jupyter Notebook: https://jupyter.org/install. Browse to the local directory on command line and launch Jupyter Notebook by typing "jupyter notebook"; this should automatically open a browser window/tab (or you can browse) to http://localhost:8888/tree. When opening the notebook, ensure Python3 Kernel is running.
+# Prerequisites 
+Requires Python3 and potentially non-standard libraries including pandas, numpy, statistics, and matplotlib, Ipywidgets, pyoperators, and tkintertable that can be installed using Pip or a similar installers. For running the notebook locally, install Jupyter Notebook: https://jupyter.org/install. Browse to the local directory on command line and launch Jupyter Notebook by typing "jupyter notebook"; this should automatically open a browser window/tab (or you can browse) to http://localhost:8888/tree. When opening the notebook, ensure Python3 Kernel is running.
 
 # BERT Pipeline
 Coming soon...

@@ -19,7 +19,7 @@ from tkinter import Tk, filedialog
 import pandas as pd
 import random
 
-
+# initializing file explorer pop-up
 root = Tk()
 root.geometry('1000x600')
 root.title('DataFrame Filter Tool')
@@ -36,8 +36,10 @@ def create_test_set(fil_df, percent, source):
     to be apart of the test set for the classifier across all the labels. So it grabs about 20% of the sentences
     from each label and adds them to a list. This list is returned from this function.
     """
+    # If the checkbutton for source distribution is checked
     if source == 1:
         source = True
+        
     # Getting all the unique labels from the dataframe
     labels = fil_df['original_label'].unique().tolist()
 
@@ -50,10 +52,10 @@ def create_test_set(fil_df, percent, source):
 
         # The case if you want to distribute the test set amount through each source
         if source:
-            unique_source = fil_df['Source'].unique().tolist()
+            unique_source = fil_df['Source'].unique().tolist() # List of all the difference sources 
             for sourced in unique_source:
-                df = fil_df[fil_df['Source'] == sourced]
-                source_sent_list = df[df['top_label'] == label]['Input.text'].tolist()
+                df = fil_df[fil_df['Source'] == sourced] # Dataframe with rows that contain the 'sourced' source in it
+                source_sent_list = df[df['top_label'] == label]['Input.text'].tolist() # list of the sentenes from this source
 
 
                 count = len(source_sent_list)
@@ -89,7 +91,7 @@ def create_test_set(fil_df, percent, source):
                 added += 1
                 count -= 1
 
-    # returning the big lsit of sentences that are going to be marked to be apart of the test set
+    # returning the big list of sentences that are going to be marked to be apart of the test set
     return test_set
 
 def create_set_list(test_set, fil_df):
@@ -131,9 +133,6 @@ def add_label_code(new_df):
     # create a dictionary that holds a value for each label
     key_dict = {'Social Relationships': 0, 'Health, Fatigue, or Physical Pain': 1, 'Emotional Turmoil': 2, 'Work': 3,
                 'Family Issues': 4, 'Everyday Decision Making': 5, 'School': 6, 'Other': 7, 'Financial Problem': 8}
-    # for i in range(len(labels)):
-    #     key_dict[labels[i]] = i
-    # print(key_dict)
 
     # create a list that is going to represent each label as the value from the dictionary
     Class = []
@@ -142,6 +141,7 @@ def add_label_code(new_df):
         Class.append(key_dict[label])
     for label in new_df['original_label']:
         og_class.append(key_dict[label])
+        
     # add the column to the dataframe
     new_df['Multi-class'] = Class
     new_df['Original-Multi-Class'] = og_class
@@ -193,6 +193,11 @@ def file_selection():
     return df
 
 def mix_df(df, shuff_num):
+    """
+    This function shuffles the dataframe the number of times that was selected in the filter GUI.
+    Returns the shuffled dataframe.
+    """
+    
     # Don't scramble
     if shuff_num == 0:
         return df
@@ -235,7 +240,7 @@ def filter(df, dict, sliders):
     that the user chose to keep.
     """
 
-    # reducing the sample sentence size to what was indicated by the sliders
+    
 
 
     # loop through each value of the checkbutton
@@ -247,13 +252,15 @@ def filter(df, dict, sliders):
 
                 # keep everything in df except for the checkbuttons that were unselected
                 df = df[df[key] != value]
-
+    
+    # reducing the sample sentence size to what was indicated by the sliders in the filter GUI
     for label in sliders:
         count = int(sliders[label].get())
         sentences = df[df['top_label'] == label]['Input.text'].tolist()
         if len(sentences) < int(count):
             continue
-
+        
+        # Get rid of excess sentences.
         for sentence in sentences[int(count):]:
             df = df[df['Input.text'] != sentence]
 
@@ -299,10 +306,9 @@ def options():
     Label(root, bg='#b3ffb3',text='Select Number of times to mix DataFrame', font=("TimesNewRoman", 8)).pack()
     Scale(root, bg='white',from_=0, to=10, resolution=1, length=1000, orient=HORIZONTAL,
           variable=shuff_num, width=10, font=("TimesNewRoman", 8)).pack()
-    # Checkbutton(root, bg='white', text='Use top_label or original_label?', variable=og_label).pack()
 
 
-    return test_percent, shuff_num#, og_label
+    return test_percent, shuff_num
 
 def check_box(df):
     """
@@ -393,50 +399,70 @@ def check_box(df):
     return grand_dict, source
 
 def add_label_sliders(df):
+    """
+    This function is to create the sliders that are used to reduce the sentence sample size for the labels.
+    It returns a dictionary of the values of the sliders set by the filter GUI. 
+    """
+    
+    # Initialize list of labels and dictonary
     labels = df['top_label'].unique().tolist()
     slider_dict = {}
+    
     for label in labels:
         count = len(df[df['top_label'] == label])
         slider_dict[label] = DoubleVar()
         slider_dict[label].set(count)
-        Label(root, bg='#b3ffb3', text='Select Max Sample For ' + str(label), font=("TimesNewRoman", 8)).pack()
+        Label(root, bg='#b3ffb3', text='Select Max Sample For ' + str(label), font=("TimesNewRoman", 8)).pack() # Creates label text 
         make_slider(count, label, slider_dict)
 
     return slider_dict
 
 
 def make_slider(cap, variable, dict):
+    """
+    This function makes the sliders for the filter GUI
+    """
     Scale(root, bg='white', from_=0, to=cap, length=1000, orient=HORIZONTAL,
           variable=dict[variable], width=10, font=("TimesNewRoman", 8)).pack()
 
 
 def df_settings(dictionary, source, dict, sliders, test, shuff):
-
+    """
+    This function creates a text file that reports all the settings that returned dataframe has in it
+    for reference of the different filters applied to it. Saved to the current directory the script is being ran from
+    under the name "Dataframe_Settings.txt"
+    """
+    
+    # start a list to append the settings to
     settings = ["DATA FRAME SETTINGS \nThis is what is included in the data frame: \n\n"]
     
+    # the settings for the test distribution and shuffle amount
     settings.append('Test Distribution: ' + str(test.get()) + '\n\n')
     settings.append('Data Shuffled ' + str(shuff.get()) + ' times\n\n')
     
+    # report all numbers sample sentence sliders are set to
     for slider in sliders:
         settings.append('Sample limit for ' + str(slider) + '\n')
         settings.append(str(sliders[slider].get()) + '\n\n')
     
-    
+    # Write all the information with that had it's checkbox checked
     for column in dictionary:
         settings.append(str(column) + '\n')
         for option in dictionary[column]:
             if dictionary[column][option].get() == 1:
                 settings.append(str(option) + " \n")
         settings.append('\n')
-
+    
     if source == 1:
         settings.append('Test Set Distributed by Source? \n' + 'yes\n\n')
     else:
         settings.append('Test Set Distributed by Source? \n' + 'no\n\n')
 
+    # Write to the file the key for the multi-class coding of the labels
     settings.append('Multi-Class Encoding Key:\n')
     settings.append(str(dict))
 
+    # create file and write the settings to it
     file = open("DataFrame_Settings.txt", "w")
     file.writelines(settings)
 

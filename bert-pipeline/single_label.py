@@ -23,6 +23,7 @@
 import os
 
 os.environ['LD_LIBRARY_PATH'] = '/usr/local/cuda-10.0/lib64'
+os.environ['CUDA_VISIBLE_DEVICES']='0'
 import sys
 print(sys.executable)
 
@@ -39,7 +40,7 @@ from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import f1_score,confusion_matrix,classification_report,accuracy_score
 
 import logging
-logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+logging.basicConfig(stream=sys.stdout, level=logging.ERROR) #INFO)
 
 
 
@@ -209,14 +210,14 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
 ####### Loading the data ##### 
 
-def data_prep_bert(df,test_size):
+def data_prep_bert(df,test_size,trail_nb):
     
     #print("Filling missing values")
     #df[DATA_COLUMN] = df[DATA_COLUMN].fillna('_NA_')
     
     print("Splitting dataframe with shape {} into training and test datasets".format(df.shape))
-    X_train, X_test  = train_test_split(df, test_size=test_size, random_state=2018,stratify = df[LABEL_COLUMN_RAW])
-
+    X_train, X_test  = train_test_split(df,random_state=trail_nb, test_size=test_size,stratify = df[LABEL_COLUMN_RAW])
+    #print(X_test.head(10))
     return X_train, X_test
 
 
@@ -240,18 +241,17 @@ def open_dataset(NAME,mapping_index,excluded_categories):
         df[LABEL_COLUMN_RAW] = df[LABEL_COLUMN_RAW].astype('category')
         df[LABEL_COLUMN], mapping_index = pd.Series(df[LABEL_COLUMN_RAW]).factorize() #uses pandas factorize() to convert to numerical index
         
-        
-        
-        label_list_final = [None] * len(mapping_index.categories)
-        label_list_number = [None] * len(mapping_index.categories)
-        
-        for index,ele in enumerate(list(mapping_index.categories)):
-            lindex = mapping_index.get_loc(ele)
-            label_list_number[lindex] = lindex
-            label_list_final[lindex] = ele
     else:
         df[LABEL_COLUMN] = df[LABEL_COLUMN_RAW].apply(lambda x: mapping_index.get_loc(x))
-    
+        
+    label_list_final = [None] * len(mapping_index.categories)
+    label_list_number = [None] * len(mapping_index.categories)
+
+    for index,ele in enumerate(list(mapping_index.categories)):
+        lindex = mapping_index.get_loc(ele)
+        label_list_number[lindex] = lindex
+        label_list_final[lindex] = ele
+
     frequency_dict = df[LABEL_COLUMN_RAW].value_counts().to_dict()
     df["class_freq"] = df[LABEL_COLUMN_RAW].apply(lambda x: frequency_dict[x])
     
@@ -265,8 +265,8 @@ def open_dataset(NAME,mapping_index,excluded_categories):
 ### Experiment Name
 
 PATH = './datasets/'
-TODAY_DATE = "27_07_2020/"
-EXPERIMENT_NAME = 'single_label'
+TODAY_DATE = "29_07_2020/"
+EXPERIMENT_NAME = 'single_label-balanced'
 EXPERIMENTS_PATH = PATH + 'experiments/'+TODAY_DATE+EXPERIMENT_NAME
 
 
@@ -297,7 +297,7 @@ OUTPUT_DIR = './models/'+ TODAY_DATE+EXPERIMENT_NAME+'/'
 
 
 
-DATASET_NAME = '2020-06-20-MainTurkAggregation-5-Turkers_v0'
+DATASET_NAME = 'Filtered_df_balanced'
 
 DATA_COLUMN = 'Input.text'
 LABEL_COLUMN_RAW = 'top_label'#'Answer.Label'
@@ -312,8 +312,11 @@ MTURK_COVID_NAME = 'mTurk_synthetic_covid'
 #dataset,mapping_index,label_list, label_list_text = open_dataset('mturk900balanced',None)
 
 EXCLUDED_CATEGORIES = None #['Other'] #None # # if nothing to exclude put None, THIS ALWAYS MUST BE A LIST 
+mapping_dict = {'Other': 0, 'Everyday Decision Making': 1, 'Work': 2, 'Social Relationships': 3, 'Financial Problem': 4, 'Emotional Turmoil': 5, 'Health, Fatigue, or Physical Pain': 6, 'School': 7, 'Family Issues': 8}#,'Not Stressful':9}
+mapping_index = pd.CategoricalIndex([key for key,value in mapping_dict.items()])
 
-dataset,mapping_index,label_list, label_list_text = open_dataset(DATASET_NAME,None,EXCLUDED_CATEGORIES)
+dataset,mapping_index,label_list, label_list_text = open_dataset(DATASET_NAME,mapping_index,EXCLUDED_CATEGORIES)
+
 
 
 
@@ -387,30 +390,42 @@ def create_model(is_predicting, input_ids, input_mask, segment_ids, labels,
     ########################### HERE ADDITIONAL LAYERS CAN BE ADDED ######################
     
     # compute the log softmax for each neurons/logit
-    log_probs = tf.nn.log_softmax(logits, axis=-1)
+    #log_probs = tf.nn.log_softmax(logits, axis=-1)
     
     #compute the normal softmax to get the probabilities
-    probs = tf.nn.softmax(logits, axis=-1)
+    #probs = tf.nn.softmax(logits, axis=-1)
     
     # Convert labels into one-hot encoding 
-    one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+    #one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
     
     #classes_weights = tf.constant([1.0,1.0,1.0,1.0,1.0,1.0,0.7], dtype=tf.float32)
     #sample_weights = tf.multiply(one_hot_labels, classes_weights)
+
+    # probabilities = tf.nn.softmax(logits, axis=-1) ### multiclass case
+    probabilities = tf.nn.sigmoid(logits)#### multi-label case
+
+    #labels = tf.cast(labels, tf.float32)
+    one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+
+    #tf.logging.info("num_labels:{};logits:{};labels:{}".format(num_labels, logits, labels))
+    per_example_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=one_hot_labels, logits=logits)
+    loss = tf.reduce_mean(per_example_loss)
     
     
-    predicted_labels = tf.squeeze(tf.argmax(log_probs, axis=-1, output_type=tf.int32))
+    
+    #predicted_labels = tf.squeeze(tf.argmax(log_probs, axis=-1, output_type=tf.int32))
+    predicted_labels = tf.squeeze(tf.argmax(probabilities, axis=-1, output_type=tf.int32))
+
     # If we're predicting, we want predicted labels and the probabiltiies.
     if is_predicting:
-      return (predicted_labels, log_probs,probs)
+      return (predicted_labels, probabilities,probabilities)#log_probs,probs)
 
     # If we're train/eval, compute loss between predicted and actual label
     #per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-    per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+    #per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
     
-    loss = tf.reduce_mean(per_example_loss)
-    return (loss, predicted_labels, log_probs)
-
+    #loss = tf.reduce_mean(per_example_loss)
+    return (loss, predicted_labels, probabilities)#log_probs)
 
 
 # model_fn_builder actually creates our model function
@@ -595,15 +610,15 @@ def train_evaluate(train, test):
 
 
 np.set_printoptions(suppress=True)
-boostrap_nb = 2
+boostrap_nb = 20
 TEST_PERCENTAGE = 0.2
 
 eval_info = []
 eval_classification_report = []
 
 for i in range(boostrap_nb):
-
-    train,test = data_prep_bert(dataset,TEST_PERCENTAGE)
+    print(f"_________________________________________Step number {i}_____________________________")
+    train,test = data_prep_bert(dataset,TEST_PERCENTAGE,i)
 
     info,report = train_evaluate(train, test)
 

@@ -209,14 +209,14 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
 ####### Loading the data ##### 
 
-def data_prep_bert(df,test_size):
+def data_prep_bert(df,test_size,trial_nb):
     
     #print("Filling missing values")
     #df[DATA_COLUMN] = df[DATA_COLUMN].fillna('_NA_')
     
     print("Splitting dataframe with shape {} into training and test datasets".format(df.shape))
-    X_train, X_test  = train_test_split(df, test_size=test_size, random_state=2018,stratify = df[LABEL_COLUMN_RAW])
-
+    X_train, X_test  = train_test_split(df, test_size=test_size,random_state= trial_nb, stratify = df[LABEL_COLUMN_RAW])
+    #print(X_test.head(10))
     return X_train, X_test
 
 def open_dataset(NAME,mapping_index,excluded_categories):
@@ -264,8 +264,8 @@ def open_dataset(NAME,mapping_index,excluded_categories):
 # Experiement name
 
 PATH = './datasets/'
-TODAY_DATE = "27_07_2020/"
-EXPERIMENT_NAME = 'multilabel'
+TODAY_DATE = "28_07_2020/"
+EXPERIMENT_NAME = 'multilabel-balanced'
 EXPERIMENTS_PATH = PATH + 'experiments/'+TODAY_DATE+EXPERIMENT_NAME
 if not os.path.exists(PATH + 'experiments/'+TODAY_DATE):
     os.mkdir(PATH + 'experiments/'+TODAY_DATE)
@@ -298,7 +298,7 @@ BERT_CONFIG = './bert_model/uncased_L-12_H-768_A-12/bert_config.json'
 
 
 
-DATASET_NAME = '2020-06-20-MainTurkAggregation-5-Turkers_v0'
+DATASET_NAME = 'Filtered_df_balanced'
 
 DATA_COLUMN = 'Input.text'
 LABEL_COLUMN_RAW = 'top_label'#'Answer.Label'
@@ -979,7 +979,7 @@ def train_evaluate(train, test):
 
 
 np.set_printoptions(suppress=True)
-boostrap_nb = 2
+boostrap_nb = 20
 TEST_PERCENTAGE = 0.2
 
 eval_info = []
@@ -987,7 +987,7 @@ eval_classification_report = []
 
 for i in range(boostrap_nb):
 
-    train,test = data_prep_bert(dataset,TEST_PERCENTAGE)
+    train,test = data_prep_bert(dataset,TEST_PERCENTAGE,i)
 
     info,report = train_evaluate(train, test)
     print(report)
